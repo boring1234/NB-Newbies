@@ -6,11 +6,11 @@ title:  Team
 # {{ page.title }}
 
 
-## USER 1
-***UCI Net ID***: ucinetid1
+## Zebin Chen
+***UCI Net ID***: zebinc
 
-## USER 2
-***UCI Net ID***: ucinetid2
+## Zezhong Zhang
+***UCI Net ID***: zezhongz
 
-## USER 3
-***UCI Net ID***: ucinetid3
+## Yinfei Wang
+***UCI Net ID***: yinfeiw
