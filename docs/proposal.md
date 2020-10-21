@@ -11,3 +11,6 @@ Our AI/ML algorithms will basically be reinforcement learning and other learning
 
 ## Evaluation Plan
 The ways to evaluated our AI is to count how many mine that agent can collect in a specific amount of time, the times that the agent died in the cave, percentage of completeness minecrafting for the whole cave. 
+
+## Appointment time
+10/23/2020 4pm
