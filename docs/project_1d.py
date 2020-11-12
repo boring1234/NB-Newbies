@@ -87,7 +87,7 @@ def GetMissionXML():
     #-------------------------------------
 
 
-    ## 加了 RewardForDamagingEntity，DrawingDecorator, 改了ObservationFromNearbyEntities，ObservationFromGrid
+    ## 加了 RewardForDamagingEntity，DrawingDecorator, 改了ObservationFromNearbyEntities，ObservationFromGrid，inventory里钻石剑
     ## 注意这里如果跑程序时人物不在地图里，请改drawingdecorator里 第4-6行的x1,x2
     return f'''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
