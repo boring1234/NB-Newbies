@@ -18,6 +18,8 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
+from numpy.random import rand
+
 
 # Hyperparameters
 SIZE = 50
@@ -36,11 +38,15 @@ LEARNING_RATE = 1e-4
 START_TRAINING = 500
 LEARN_FREQUENCY = 1
 ACTION_DICT = {
-    0: 'move 1',  # Move one block forward
-    1: 'turn 1',  # Turn 90 degrees to the right
-    2: 'turn -1',  # Turn 90 degrees to the left
-    3: 'attack 1'  # Destroy block
+    0: 'move 1',  # 向前一步
+    1: 'move -1',  # 向后一步
+    2: 'attack 1',  # 攻击
+    3: 'attack 0' # 停止攻击
 }
+### https://github.com/microsoft/malmo/blob/master/Schemas/MissionHandlers.xsd 这里有所有玩家动作
+
+##这里加了伤害转换成分数的比例系数
+DAMAGE_TO_SCORE_RATE = 0.2  
 
 
 # Q-Value Network
@@ -60,10 +66,8 @@ class QNetwork(nn.Module):
     def forward(self, obs):
         """
         Estimate q-values given obs
-
         Args:
             obs (tensor): current obs, size (batch x obs_size)
-
         Returns:
             q-values (tensor): estimated q-values, size (batch x action_size)
         """
@@ -83,27 +87,13 @@ def GetMissionXML():
     #-------------------------------------
 
 
-    """
-    code added to the original, eveything else remain the same the original:
-
-    <DrawCuboid x1="-50" x2="50" y1="2" y2="7" z1="0" z2="0" type="obsidian"/>
-    <DrawCuboid x1="-50" x2="50" y1="2" y2="2" z1="1" z2="1" type="air"/>
-    <DrawCuboid x1="-50" x2="50" y1="2" y2="2" z1="1" z2="1" type="obsidian"/>
-    <DrawCuboid x1="-50" x2="50" y1="2" y2="7" z1="2" z2="2" type="obsidian"/>
-    <DrawEntity x="-45" y="3" z="1.5" type="Creeper" yaw="0"/>
-
-    <ObservationFromNearbyEntities>
-        <Range name="entities" xrange="10" yrange="2" zrange="10" />
-    </ObservationFromNearbyEntities>
-    
-    """
-    return '''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
+    ## 加了 RewardForDamagingEntity，DrawingDecorator, 改了ObservationFromNearbyEntities，ObservationFromGrid
+    ## 注意这里如果跑程序时人物不在地图里，请改drawingdecorator里 第4-6行的x1,x2
+    return f'''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-
                 <About>
                     <Summary>Diamond Collector</Summary>
                 </About>
-
                 <ServerSection>
                     <ServerInitialConditions>
                         <Time>
@@ -115,73 +105,73 @@ def GetMissionXML():
                     <ServerHandlers>
                         <FlatWorldGenerator generatorString="3;7,2;1;"/>
                         <DrawingDecorator>
-                            <DrawCuboid x1="-100" x2="100" y1="2" y2="7" z1="0" z2="0" type="obsidian"/>
-                            <DrawCuboid x1="-100" x2="100" y1="2" y2="2" z1="1" z2="1" type="obsidian"/>
-                            <DrawCuboid x1="-100" x2="100" y1="2" y2="7" z1="2" z2="2" type="obsidian"/>
-                            <DrawEntity x="0" y="3" z="1.5" type="Creeper" yaw="0"/>
+                            <DrawCuboid x1="70" x2="-30" y1="1" y2="1" z1="50" z2="-50" type="stone"/>
+                            <DrawCuboid x1="70" x2="-30" y1="2" y2="2" z1="50" z2="-50" type="air"/>
+                            <DrawCuboid x1="70" x2="-30" y1="3" y2="3" z1="50" z2="-50" type="air"/>
+                            <DrawCuboid x1="21" x2="21" y1="2" y2="3" z1="-50" z2="50" type="obsidian"/>
+                            <DrawCuboid x1="20" x2="20" y1="1" y2="1" z1="-50" z2="50" type="obsidian"/>
+                            <DrawCuboid x1="19" x2="19" y1="2" y2="3" z1="-50" z2="50" type="obsidian"/>
+                            <DrawEntity x="20.5" y="2" z="10" type="Creeper" yaw="0"/>
                         </DrawingDecorator>
                         <ServerQuitWhenAnyAgentFinishes/>
                     </ServerHandlers>
                 </ServerSection>
-
                 <AgentSection mode="Survival">
-                    <Name>CS175DiamondCollector</Name>
+                    <Name>CS175CreeperSurviver</Name>
                     <AgentStart>
                         <Placement x="20" y="3" z="1.5" pitch="45" yaw="0"/>
                         <Inventory>
-                            <InventoryItem slot="0" type="diamond_pickaxe"/>
+                            <InventoryItem slot="0" type="diamond_sword"/>
                         </Inventory>
                     </AgentStart>
                     <AgentHandlers>
                         <DiscreteMovementCommands/>
                         <ObservationFromFullStats/>
                         <ObservationFromNearbyEntities>
-                            <Range name="entities" xrange="10" yrange="2" zrange="10" />
+                            <Range name="entities" xrange="{OBS_SIZE}" yrange="1" zrange="{OBS_SIZE}" />
                         </ObservationFromNearbyEntities>
                         <ObservationFromGrid>
                             <Grid name="floorAll">
-                                <min x="-'''+str(int(OBS_SIZE/2))+'''" y="-1" z="-'''+str(int(OBS_SIZE/2))+'''"/>
-                                <max x="'''+str(int(OBS_SIZE/2))+'''" y="0" z="'''+str(int(OBS_SIZE/2))+'''"/>
+                                <min x="0" y="-1" z="-{OBS_SIZE}"/>
+                                <max x="0" y="-1" z="{OBS_SIZE}"/>
                             </Grid>
                         </ObservationFromGrid>
-                        <AgentQuitFromReachingCommandQuota total="'''+str(MAX_EPISODE_STEPS)+'''" />
+                        <RewardForDamagingEntity>
+                            <Mob type="Creeper" reward="1"/>
+                        </RewardForDamagingEntity>
+                        <AgentQuitFromReachingCommandQuota total="{MAX_EPISODE_STEPS}" />
                     </AgentHandlers>
                 </AgentSection>
             </Mission>'''
 
 
-def get_action(obs, q_network, epsilon, allow_break_action):
+def get_action(obs,epsilon):
     """
     Select action according to e-greedy policy
-
     Args:
         obs (np-array): current observation, size (obs_size)
         q_network (QNetwork): Q-Network
         epsilon (float): probability of choosing a random action
-
     Returns:
         action (int): chosen action [0, action_size)
     """
+
+    r = rand()
+    if r>epsilon:
+        # exploitation: choose the argmax
+        pass
+    else:
+        # exploration:
+        action_idx = randint(3)
+        return action_idx
+
     #------------------------------------
     #
-    #   TODO: Implement e-greedy policy
+    #   TODO:这里写通过train完了选的action
     #
     #-------------------------------------
-
-    # Prevent computation graph from being calculated
-    with torch.no_grad():
-        # Calculate Q-values fot each action
-        obs_torch = torch.tensor(obs.copy(), dtype=torch.float).unsqueeze(0)
-        action_values = q_network(obs_torch)
-
-        # Remove attack/mine from possible actions if not facing a diamond
-        if not allow_break_action:
-            action_values[0, 3] = -float('inf')  
-
-        # Select action with highest Q-value
-        action_idx = torch.argmax(action_values).item()
     
-    return 0# 这是我改的。 这可以然玩家直接操控 agent    
+    return 0 # 这是我改的。 这可以然玩家直接操控 agent    
     # return action_idx
 
 
@@ -212,18 +202,16 @@ def init_malmo(agent_host):
     return agent_host
 
 
-def get_observation(world_state):
+def get_observation(world_state, life):
     """
     Use the agent observation API to get a 2 x 5 x 5 grid around the agent. 
     The agent is in the center square facing up.
-
     Args
         world_state: <object> current agent world state
-
     Returns
         observation: <np.array>
     """
-    obs = np.zeros((2, OBS_SIZE, OBS_SIZE))
+    obs = np.zeros((1, 1, 2 * OBS_SIZE+1))  # 这里改了observation size
 
     while world_state.is_mission_running:
         time.sleep(0.1)
@@ -240,24 +228,31 @@ def get_observation(world_state):
             what the above line prints when the agent looks a round or moves around:
             
             {'DistanceTravelled': 26117, 'TimeAlive': 1767, 'MobsKilled': 0, 'PlayersKilled': 0, 'DamageTaken': 0, 'DamageDealt': 0, 'Life': 20.0, 'Score': 0, 'Food': 20, 'XP': 0, 'IsAlive': True, 'Air': 300, 'Name': 'CS175DiamondCollector', 'XPos': 39.99988746507245, 'YPos': 3.0, 'ZPos': 1.699999988079071, 'Pitch': 33.3, 'Yaw': -286.4995, 'WorldTime': 2135, 'TotalTime': 1779, 'floorAll': ['air', 'air', 'air', 'air', 'air', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'air', 'air', 'air', 'air', 'air', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'air', 'air', 'air', 'air', 'air']}
-
             life = 20(full)  starting seeing the creeper
-
             {'DistanceTravelled': 30771, 'TimeAlive': 2778, 'MobsKilled': 0, 'PlayersKilled': 0, 'DamageTaken': 120, 'DamageDealt': 0, 'Life': 20.0, 'Score': 0, 'Food': 20, 'XP': 0, 'IsAlive': True, 'Air': 300, 'Name': 'CS175DiamondCollector', 'XPos': 20.2028200313867, 'YPos': 3.0, 'ZPos': 1.300000011920929, 'Pitch': 45.0, 'Yaw': 0.0, 'WorldTime': 12128, 'TotalTime': 2790, 'entities': [{'yaw': 0.0, 'x': 20.224340942272693, 'y': 3.0, 'z': 1.300000011920929, 'pitch': 45.0, 'id': '642865e8-993c-3421-aad8-35531c528774', 'motionX': 0.004149889454665737, 'motionY': -0.0784000015258789, 'motionZ': 0.0, 'life': 20.0, 'name': 'CS175DiamondCollector'}, {'yaw': -91.40625, 'x': 18.151123046875, 'y': 3.0, 'z': 1.5, 'pitch': 0.0, 'id': 'cd756268-5e4b-4d08-a6ba-b4b8c80f5317', 'motionX': 0.0048006991671951235, 'motionY': -0.057885353419833516, 'motionZ': 0.0, 'life': 20.0, 'name': 'Creeper'}, {'yaw': 270.0, 'x': 17.376220703125, 'y': 3.0, 'z': 1.494384765625, 'pitch': -1.40625, 'id': 'b954c630-8d13-45b1-a341-71a3dade13b7', 'motionX': 0.005310973244769054, 'motionY': -0.06403808123981149, 'motionZ': 0.0, 'life': 20.0, 'name': 'Creeper'}], 'floorAll': ['air', 'air', 'air', 'air', 'air', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'air', 'air', 'air', 'air', 'air', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'air', 'air', 'air', 'air', 'air']}
-
             keep approaching the creeper
-
             {'DistanceTravelled': 30811, 'TimeAlive': 2783, 'MobsKilled': 0, 'PlayersKilled': 0, 'DamageTaken': 120, 'DamageDealt': 0, 'Life': 20.0, 'Score': 0, 'Food': 20, 'XP': 0, 'IsAlive': True, 'Air': 300, 'Name': 'CS175DiamondCollector', 'XPos': 19.798259488471064, 'YPos': 3.0, 'ZPos': 1.300000011920929, 'Pitch': 45.0, 'Yaw': 270.0, 'WorldTime': 12133, 'TotalTime': 2795, 'entities': [{'yaw': 270.0, 'x': 21.206472296238157, 'y': 4.6367750149965286, 'z': 1.300000011920929, 'pitch': 45.0, 'id': '642865e8-993c-3421-aad8-35531c528774', 'motionX': 0.4525774181112579, 'motionY': 0.6767145278673175, 'motionZ': 0.0, 'life': 0.0, 'name': 'CS175DiamondCollector'}, {'yaw': 270.0, 'x': 16.835187789036162, 'y': 3.752137637405216, 'z': 1.4904994172267743, 'pitch': -0.46875, 'id': 'b954c630-8d13-45b1-a341-71a3dade13b7', 'motionX': -0.443125, 'motionY': 1.027125, 'motionZ': -0.003125, 'life': 0.0, 'name': 'Creeper'}, {'yaw': 338.90625, 'x': 19.140103745818138, 'y': 4.543785941582918, 'z': 1.561767578125, 'pitch': 0.0, 'id': '543a3424-b5ac-4d41-95fe-a8d542732f00', 'motionX': -0.21056770819644938, 'motionY': 0.03222975375235089, 'motionZ': 0.0, 'quantity': 1, 'name': 'diamond_pickaxe'}, {'yaw': 164.53125, 'x': 17.179746190977863, 'y': 3.2768000057160855, 'z': 1.5916937536250897, 'pitch': 0.0, 'id': '81f2ac87-f77f-4550-9315-3d8eefbd6fb6', 'motionX': -0.09531970371036533, 'motionY': 0.11446400695335877, 'motionZ': 0.04717965183649065, 'quantity': 1, 'name': 'gunpowder'}], 'floorAll': ['air', 'air', 'air', 'air', 'air', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'air', 'air', 'air', 'air', 'air', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'air', 'air', 'air', 'air', 'air']}
-
             life = 0 after killed by explosion of creeper
-
             {'DistanceTravelled': 30811, 'TimeAlive': 0, 'MobsKilled': 0, 'PlayersKilled': 0, 'DamageTaken': 390, 'DamageDealt': 0, 'Life': 0.0, 'Score': 0, 'Food': 20, 'XP': 0, 'IsAlive': True, 'Air': 300, 'Name': 'CS175DiamondCollector', 'XPos': 23.37950152675729, 'YPos': 7.354274464662253, 'ZPos': 1.300000011920929, 'Pitch': 45.0, 'Yaw': 180.0, 'WorldTime': 12140, 'TotalTime': 2802, 'entities': [{'yaw': 180.0, 'x': 23.636506371111786, 'y': 7.506239046213171, 'z': 1.300000011920929, 'pitch': 45.0, 'id': '642865e8-993c-3421-aad8-35531c528774', 'motionX': 0.23387441510281104, 'motionY': 0.07052529129251528, 'motionZ': 0.0, 'life': 0.0, 'name': 'CS175DiamondCollector'}, {'yaw': 270.0, 'x': 14.741780598958332, 'y': 8.20263671875, 'z': 1.4853515625, 'pitch': -0.46875, 'id': 'b954c630-8d13-45b1-a341-71a3dade13b7', 'motionX': -0.251625, 'motionY': 0.462375, 'motionZ': 0.0, 'life': 0.0, 'name': 'Creeper'}], 'floorAll': ['air', 'air', 'air', 'air', 'air', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'air', 'air', 'air', 'air', 'air', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'air', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'air', 'air', 'air', 'air', 'air', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'obsidian', 'air', 'air', 'air', 'air', 'air']}
-
             """
             # Get observation
             grid = observations['floorAll']
-            grid_binary = [1 if x == 'diamond_ore' or x == 'lava' else 0 for x in grid]
-            obs = np.reshape(grid_binary, (2, OBS_SIZE, OBS_SIZE))
+            grid_binary = [1 if x == 'gunpowder' else 0 for x in grid]  ##这里把gunpowder设成1，不是gunpowder设成0
+            # print(grid_binary)
+            obs = np.reshape(grid_binary, (1, 1, 2*OBS_SIZE+1))  # 这里改了observation size
+            agent_Z = [ent['z'] for ent in observations['entities'] if ent['name']=='CS175CreeperSurviver'][0]
+            for ent in observations['entities']:
+                if ent['name'] == 'Creeper':
+                    obs[0][0][round(ent['z']-agent_Z)+5] = 2  ## 2 代表这个格子里有creeper
+
+            print(obs) ##这里是agent前后creeper的状况 print
+
+            ##这里根据生命值修改score，xml里没有找到直接改的地方
+            if observations['Life'] < life:
+                observations['Score'] -= (life - observations['Life']) * DAMAGE_TO_SCORE_RATE
+            
+            ##修改成新的life值
+            life = observations['Life'] 
 
             # Rotate observation with orientation of agent
             yaw = observations['Yaw']
@@ -270,16 +265,14 @@ def get_observation(world_state):
             
             break
 
-    return obs
+    return obs, life
 
 
 def prepare_batch(replay_buffer):
     """
     Randomly sample batch from replay buffer and prepare tensors
-
     Args:
         replay_buffer (list): obs, action, next_obs, reward, done tuples
-
     Returns:
         obs (tensor): float tensor of size (BATCH_SIZE x obs_size
         action (tensor): long tensor of size (BATCH_SIZE)
@@ -300,7 +293,6 @@ def prepare_batch(replay_buffer):
 def learn(batch, optim, q_network, target_network):
     """
     Update Q-Network according to DQN Loss function
-
     Args:
         batch (tuple): tuple of obs, action, next_obs, reward, and done tensors
         optim (Adam): Q-Network optimizer
@@ -323,7 +315,6 @@ def learn(batch, optim, q_network, target_network):
 def log_returns(steps, returns):
     """
     Log the current returns as a graph and text file
-
     Args:
         steps (list): list of global steps after each episode
         returns (list): list of total return of each episode
@@ -345,7 +336,6 @@ def log_returns(steps, returns):
 def train(agent_host):
     """
     Main loop for the DQN learning algorithm
-
     Args:
         agent_host (MalmoPython.AgentHost)
     """
@@ -367,6 +357,7 @@ def train(agent_host):
     start_time = time.time()
     returns = []
     steps = []
+    life = 20  ##这里life变量记录每次agent的血量，从而算出每次掉血多少
 
     # Begin main loop
     loop = tqdm(total=MAX_GLOBAL_STEPS, position=0, leave=False)
@@ -384,17 +375,22 @@ def train(agent_host):
             world_state = agent_host.getWorldState()
             for error in world_state.errors:
                 print("\nError:",error.text)
-        obs = get_observation(world_state)
+        obs, life = get_observation(world_state, life)  ##这里pass进去life变量，同时return了life变量来修改life
+        ## 这里obs里，1代表gunpowder，2代表creeper，0代表没有东西
 
         # Run episode
         while world_state.is_mission_running:
             # Get action
-            allow_break_action = obs[1, int(OBS_SIZE/2)-1, int(OBS_SIZE/2)] == 1
-            action_idx = get_action(obs, q_network, epsilon, allow_break_action)
+            # allow_break_action = obs[1, int(OBS_SIZE/2)-1, int(OBS_SIZE/2)] == 1
+            action_idx = get_action(obs, epsilon)
+            
             command = ACTION_DICT[action_idx]
+            print(command)
 
             # Take step
             agent_host.sendCommand(command)
+            if(command == 'attack 1'):
+                agent_host.sendCommand('attack 0')
 
             # If your agent isn't registering reward you may need to increase this
             time.sleep(.1)
@@ -402,18 +398,21 @@ def train(agent_host):
             # We have to manually calculate terminal state to give malmo time to register the end of the mission
             # If you see "commands connection is not open. Is the mission running?" you may need to increase this
             episode_step += 1
-            if episode_step >= MAX_EPISODE_STEPS or \
-                    (obs[0, int(OBS_SIZE/2)-1, int(OBS_SIZE/2)] == 1 and \
-                    obs[1, int(OBS_SIZE/2)-1, int(OBS_SIZE/2)] == 0 and \
-                    command == 'move 1'):
+            # if episode_step >= MAX_EPISODE_STEPS or \
+            #         (obs[0, int(OBS_SIZE/2)-1, int(OBS_SIZE/2)] == 1 and \
+            #         obs[1, int(OBS_SIZE/2)-1, int(OBS_SIZE/2)] == 0 and \
+            #         command == 'move 1'):
+            #     done = True
+            #     time.sleep(2)  
+            if episode_step >= MAX_EPISODE_STEPS:   ##重写了这里，comment掉了上面
                 done = True
-                time.sleep(2)  
+                time.sleep(2)
 
             # Get next observation
             world_state = agent_host.getWorldState()
             for error in world_state.errors:
                 print("Error:", error.text)
-            next_obs = get_observation(world_state) 
+            next_obs, life = get_observation(world_state, life)  #这里同样加了life parameter 和 life 的return
 
             # Get reward
             reward = 0
