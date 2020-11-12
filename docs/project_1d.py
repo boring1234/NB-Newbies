@@ -13,12 +13,11 @@ from collections import deque
 import matplotlib.pyplot as plt 
 import numpy as np
 from numpy.random import randint
+from numpy.random import rand
 
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
-
-from numpy.random import rand
 
 
 # Hyperparameters
@@ -48,6 +47,9 @@ ACTION_DICT = {
 ##这里加了伤害转换成分数的比例系数
 DAMAGE_TO_SCORE_RATE = 0.2  
 
+CREEPER = 2
+GUNPOWDER = 1
+NOTHING = 0
 
 # Q-Value Network
 class QNetwork(nn.Module):
@@ -119,13 +121,22 @@ def GetMissionXML():
                 <AgentSection mode="Survival">
                     <Name>CS175CreeperSurviver</Name>
                     <AgentStart>
-                        <Placement x="20" y="3" z="1.5" pitch="45" yaw="0"/>
+                        <Placement x="20" y="3" z="0" pitch="45" yaw="0"/>
                         <Inventory>
                             <InventoryItem slot="0" type="diamond_sword"/>
                         </Inventory>
                     </AgentStart>
                     <AgentHandlers>
-                        <DiscreteMovementCommands/>
+                        <DiscreteMovementCommands> 
+                            <ModifierList type="deny-list"> 
+                                <command>attack</command> 
+                            </ModifierList> 
+                        </DiscreteMovementCommands> 
+                        <ContinuousMovementCommands> 
+                            <ModifierList type="allow-list"> 
+                                <command>attack</command> 
+                            </ModifierList> 
+                        </ContinuousMovementCommands>
                         <ObservationFromFullStats/>
                         <ObservationFromNearbyEntities>
                             <Range name="entities" xrange="{OBS_SIZE}" yrange="1" zrange="{OBS_SIZE}" />
@@ -145,7 +156,7 @@ def GetMissionXML():
             </Mission>'''
 
 
-def get_action(obs,epsilon):
+def get_action(obs,epsilon, allow_attack_action):
     """
     Select action according to e-greedy policy
     Args:
@@ -162,7 +173,10 @@ def get_action(obs,epsilon):
         pass
     else:
         # exploration:
-        action_idx = randint(3)
+        if allow_attack_action:
+            action_idx = randint(3)
+        else:
+            action_idx = randint(4)
         return action_idx
 
     #------------------------------------
@@ -237,13 +251,13 @@ def get_observation(world_state, life):
             """
             # Get observation
             grid = observations['floorAll']
-            grid_binary = [1 if x == 'gunpowder' else 0 for x in grid]  ##这里把gunpowder设成1，不是gunpowder设成0
+            grid_binary = [GUNPOWDER if x == 'gunpowder' else NOTHING for x in grid]  ##这里把gunpowder设成1，不是gunpowder设成0
             # print(grid_binary)
             obs = np.reshape(grid_binary, (1, 1, 2*OBS_SIZE+1))  # 这里改了observation size
             agent_Z = [ent['z'] for ent in observations['entities'] if ent['name']=='CS175CreeperSurviver'][0]
             for ent in observations['entities']:
                 if ent['name'] == 'Creeper':
-                    obs[0][0][round(ent['z']-agent_Z)+5] = 2  ## 2 代表这个格子里有creeper
+                    obs[0,0,round(ent['z']-agent_Z)+5] = CREEPER  ## 2 代表这个格子里有creeper
 
             print(obs) ##这里是agent前后creeper的状况 print
 
@@ -382,7 +396,8 @@ def train(agent_host):
         while world_state.is_mission_running:
             # Get action
             # allow_break_action = obs[1, int(OBS_SIZE/2)-1, int(OBS_SIZE/2)] == 1
-            action_idx = get_action(obs, epsilon)
+            allow_attack_action = obs[0,0,int(OBS_SIZE)+1] == CREEPER   ##这里加了可攻击的开关
+            action_idx = get_action(obs, epsilon, allow_attack_action)
             
             command = ACTION_DICT[action_idx]
             print(command)
