@@ -107,13 +107,13 @@ def GetMissionXML():
                     <ServerHandlers>
                         <FlatWorldGenerator generatorString="3;7,2;1;"/>
                         <DrawingDecorator>
-                            <DrawCuboid x1="70" x2="-30" y1="1" y2="1" z1="50" z2="-50" type="stone"/>
-                            <DrawCuboid x1="70" x2="-30" y1="2" y2="2" z1="50" z2="-50" type="air"/>
-                            <DrawCuboid x1="70" x2="-30" y1="3" y2="3" z1="50" z2="-50" type="air"/>
-                            <DrawCuboid x1="21" x2="21" y1="2" y2="3" z1="-50" z2="50" type="obsidian"/>
-                            <DrawCuboid x1="20" x2="20" y1="1" y2="1" z1="-50" z2="50" type="obsidian"/>
-                            <DrawCuboid x1="19" x2="19" y1="2" y2="3" z1="-50" z2="50" type="obsidian"/>
-                            <DrawEntity x="20.5" y="2" z="10" type="Creeper" yaw="0"/>
+                            <DrawCuboid x1="50" x2="-50" y1="1" y2="1" z1="50" z2="-50" type="stone"/>
+                            <DrawCuboid x1="50" x2="-50" y1="2" y2="2" z1="50" z2="-50" type="air"/>
+                            <DrawCuboid x1="50" x2="-50" y1="3" y2="3" z1="50" z2="-50" type="air"/>
+                            <DrawCuboid x1="1" x2="1" y1="2" y2="3" z1="-50" z2="50" type="obsidian"/>
+                            <DrawCuboid x1="0" x2="0" y1="1" y2="1" z1="-50" z2="50" type="obsidian"/>
+                            <DrawCuboid x1="-1" x2="-1" y1="2" y2="3" z1="-50" z2="50" type="obsidian"/>
+                            <DrawEntity x="0.5" y="2" z="10" type="Creeper" yaw="0"/>
                         </DrawingDecorator>
                         <ServerQuitWhenAnyAgentFinishes/>
                     </ServerHandlers>
@@ -121,22 +121,13 @@ def GetMissionXML():
                 <AgentSection mode="Survival">
                     <Name>CS175CreeperSurviver</Name>
                     <AgentStart>
-                        <Placement x="20" y="3" z="0" pitch="45" yaw="0"/>
+                        <Placement x="0.5" y="2" z="0.5" pitch="45" yaw="0"/>
                         <Inventory>
                             <InventoryItem slot="0" type="diamond_sword"/>
                         </Inventory>
                     </AgentStart>
                     <AgentHandlers>
-                        <DiscreteMovementCommands> 
-                            <ModifierList type="deny-list"> 
-                                <command>attack</command> 
-                            </ModifierList> 
-                        </DiscreteMovementCommands> 
-                        <ContinuousMovementCommands> 
-                            <ModifierList type="allow-list"> 
-                                <command>attack</command> 
-                            </ModifierList> 
-                        </ContinuousMovementCommands>
+                        <DiscreteMovementCommands/>
                         <ObservationFromFullStats/>
                         <ObservationFromNearbyEntities>
                             <Range name="entities" xrange="{OBS_SIZE}" yrange="1" zrange="{OBS_SIZE}" />
@@ -147,6 +138,7 @@ def GetMissionXML():
                                 <max x="0" y="-1" z="{OBS_SIZE}"/>
                             </Grid>
                         </ObservationFromGrid>
+                        <ObservationFromRay/>
                         <RewardForDamagingEntity>
                             <Mob type="Creeper" reward="1"/>
                         </RewardForDamagingEntity>
@@ -166,7 +158,7 @@ def get_action(obs,epsilon, allow_attack_action):
     Returns:
         action (int): chosen action [0, action_size)
     """
-
+    print("allow attack action", allow_attack_action)
     r = rand()
     if r>epsilon:
         # exploitation: choose the argmax
@@ -175,8 +167,9 @@ def get_action(obs,epsilon, allow_attack_action):
         # exploration:
         if allow_attack_action:
             action_idx = randint(3)
+            # action_idx = 2
         else:
-            action_idx = randint(4)
+            action_idx = randint(2)
         return action_idx
 
     #------------------------------------
@@ -226,7 +219,7 @@ def get_observation(world_state, life):
         observation: <np.array>
     """
     obs = np.zeros((1, 1, 2 * OBS_SIZE+1))  # 这里改了observation size
-
+    allow_attack_action = False
     while world_state.is_mission_running:
         time.sleep(0.1)
         world_state = agent_host.getWorldState()
@@ -262,11 +255,14 @@ def get_observation(world_state, life):
             print(obs) ##这里是agent前后creeper的状况 print
 
             ##这里根据生命值修改score，xml里没有找到直接改的地方
-            if observations['Life'] < life:
-                observations['Score'] -= (life - observations['Life']) * DAMAGE_TO_SCORE_RATE
+            # if observations['Life'] < life:
+            #     observations['Score'] -= (life - observations['Life']) * DAMAGE_TO_SCORE_RATE
             
             ##修改成新的life值
-            life = observations['Life'] 
+            # life = observations['Life'] 
+
+            ## 如果目标是creeper，那么可以攻击
+            allow_attack_action = observations['LineOfSight']['type'] == 'Creeper'
 
             # Rotate observation with orientation of agent
             yaw = observations['Yaw']
@@ -279,7 +275,7 @@ def get_observation(world_state, life):
             
             break
 
-    return obs, life
+    return obs, allow_attack_action
 
 
 def prepare_batch(replay_buffer):
@@ -389,14 +385,14 @@ def train(agent_host):
             world_state = agent_host.getWorldState()
             for error in world_state.errors:
                 print("\nError:",error.text)
-        obs, life = get_observation(world_state, life)  ##这里pass进去life变量，同时return了life变量来修改life
+        obs, allow_attack_action = get_observation(world_state, life)  ##这里pass进去life变量，同时return了life变量来修改life
         ## 这里obs里，1代表gunpowder，2代表creeper，0代表没有东西
 
         # Run episode
         while world_state.is_mission_running:
             # Get action
             # allow_break_action = obs[1, int(OBS_SIZE/2)-1, int(OBS_SIZE/2)] == 1
-            allow_attack_action = obs[0,0,int(OBS_SIZE)+1] == CREEPER   ##这里加了可攻击的开关
+            # allow_attack_action = obs[0,0,int(OBS_SIZE)-2] == CREEPER   ##这里加了可攻击的开关 
             action_idx = get_action(obs, epsilon, allow_attack_action)
             
             command = ACTION_DICT[action_idx]
@@ -427,7 +423,7 @@ def train(agent_host):
             world_state = agent_host.getWorldState()
             for error in world_state.errors:
                 print("Error:", error.text)
-            next_obs, life = get_observation(world_state, life)  #这里同样加了life parameter 和 life 的return
+            next_obs, allow_attack_action = get_observation(world_state, life)  #这里同样加了life parameter 和 life 的return
 
             # Get reward
             reward = 0
