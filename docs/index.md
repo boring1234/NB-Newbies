@@ -3,6 +3,8 @@ layout: default
 title:  Home
 ---
 
+[creeperExplosion](creeper_frontpage.jpeg)
+
 Source code: https://github.com/USER/PROJECT (_fix this_)
 
 Reports:
