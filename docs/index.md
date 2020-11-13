@@ -3,9 +3,9 @@ layout: default
 title:  Home
 ---
 
-(creeper_frontpage.jpeg)
+<img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/creeper.jpg"/>
 
-Source code: https://github.com/USER/PROJECT (_fix this_)
+Source code: https://github.com/boring1234/NB-Newbies
 
 Reports:
 
