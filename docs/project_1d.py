@@ -40,7 +40,7 @@ ACTION_DICT = {
     0: 'move 1',  # 向前一步
     1: 'move -1',  # 向后一步
     2: 'attack 1',  # 攻击
-    3: 'attack 0' # 停止攻击
+    # 3: 'attack 0' # 停止攻击
 }
 ### https://github.com/microsoft/malmo/blob/master/Schemas/MissionHandlers.xsd 这里有所有玩家动作
 
@@ -50,6 +50,7 @@ DAMAGE_TO_SCORE_RATE = 0.2
 CREEPER = 2
 GUNPOWDER = 1
 NOTHING = 0
+R = 0.25
 
 # Q-Value Network
 class QNetwork(nn.Module):
@@ -158,6 +159,7 @@ def get_action(obs,epsilon, allow_attack_action):
     Returns:
         action (int): chosen action [0, action_size)
     """
+    '''
     print("allow attack action", allow_attack_action)
     r = rand()
     if r>epsilon:
@@ -180,7 +182,21 @@ def get_action(obs,epsilon, allow_attack_action):
     
     return 0 # 这是我改的。 这可以然玩家直接操控 agent    
     # return action_idx
+    '''
+    with torch.no_grad():
+        obs_torch = torch.tensor(obs.copy(), dtype=torch.float).unsqueeze(0)
+        action_values = q_network(obs_torch)
 
+        if not allow_attack_action:
+            action_values[0, 2] = -float('inf')
+
+        action_idx = torch.argmax(action_values).item()
+    print (action_values, action_idx, allow_attack_action)
+        
+    if allow_attack_action:
+        return action_idx if epsilon < 0.27 else random.randint(0, 2)
+    else:
+        return action_idx if epsilon < 0.27 else random.randint(0, 1)
 
 def init_malmo(agent_host):
     """
@@ -262,7 +278,7 @@ def get_observation(world_state, life):
             # life = observations['Life'] 
 
             ## 如果面前index上的值是2（creeper），那么可以攻击
-            allow_attack_action = obs[0][0][5] == 2
+            allow_attack_action = obs[0][0][6] == 2
             # allow_attack_action = observations['LineOfSight']['type'] == 'Creeper'
 
             # Rotate observation with orientation of agent
