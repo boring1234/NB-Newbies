@@ -261,8 +261,9 @@ def get_observation(world_state, life):
             ##修改成新的life值
             # life = observations['Life'] 
 
-            ## 如果目标是creeper，那么可以攻击
-            allow_attack_action = observations['LineOfSight']['type'] == 'Creeper'
+            ## 如果面前index上的值是2（creeper），那么可以攻击
+            allow_attack_action = obs[0][0][5] == 2
+            # allow_attack_action = observations['LineOfSight']['type'] == 'Creeper'
 
             # Rotate observation with orientation of agent
             yaw = observations['Yaw']
@@ -350,8 +351,8 @@ def train(agent_host):
         agent_host (MalmoPython.AgentHost)
     """
     # Init networks
-    q_network = QNetwork((2, OBS_SIZE, OBS_SIZE), len(ACTION_DICT))
-    target_network = QNetwork((2, OBS_SIZE, OBS_SIZE), len(ACTION_DICT))
+    q_network = QNetwork((1, 1, 2 * OBS_SIZE + 1), len(ACTION_DICT))
+    target_network = QNetwork((1, 1, 2 * OBS_SIZE + 1), len(ACTION_DICT))
     target_network.load_state_dict(q_network.state_dict())
 
     # Init optimizer
