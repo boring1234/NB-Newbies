@@ -149,7 +149,7 @@ def GetMissionXML():
             </Mission>'''
 
 
-def get_action(obs,epsilon, allow_attack_action):
+def get_action(obs, q_network, epsilon, allow_attack_action):
     """
     Select action according to e-greedy policy
     Args:
@@ -410,7 +410,7 @@ def train(agent_host):
             # Get action
             # allow_break_action = obs[1, int(OBS_SIZE/2)-1, int(OBS_SIZE/2)] == 1
             # allow_attack_action = obs[0,0,int(OBS_SIZE)-2] == CREEPER   ##这里加了可攻击的开关 
-            action_idx = get_action(obs, epsilon, allow_attack_action)
+            action_idx = get_action(obs, q_network, epsilon, allow_attack_action)
             
             command = ACTION_DICT[action_idx]
             print(command)
