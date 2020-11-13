@@ -5,38 +5,16 @@ title:  Home
 
 <img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/creeper.jpg"/>
 
-Source code: https://github.com/boring1234/NB-Newbies
-
-Reports:
-
-- [Proposal](proposal.html)
-- [Status](status.html)
-- [Final](final.html)
-
-What's Markdown (`.md`)?
-
-Markdown is markup that lets you write hypertext (HTML) documents
-in easy-to-read and easy-to-write plain text.
-No angle brackets `<></>` required for
-paragraphs, lists, blockquotes, tables, etc.
 
 
-This is a paragraph (in Markdown). Some more
-text here.
+Useful Links:
 
-This is another paragraph.
-
-This is a list:
-
-- Orange
-- Apple
-- Blueberry
-
-$$x^2 = y^2$$
+- [Source code][quickref]
+- [Status report video][quickref1]
+- [Minecraft game wiki](final.html)
 
 
-Just getting started with Markdown?
-See the [HTML <-> Markdown Quick Reference (Cheat Sheet)][quickref].
 
-
-[quickref]: https://github.com/mundimark/quickrefs/blob/master/HTML.md
+[quickref]: https://github.com/boring1234/NB-Newbies
+[quickref1]: https://www.youtube.com/watch?feature=youtu.be&v=uHg_NpBoVXQ&app=desktop
+[quickref2]: https://minecraft.gamepedia.com/Minecraft_Wiki
