@@ -11,7 +11,7 @@ Useful Links:
 
 - [Source code][quickref]
 - [Status report video][quickref1]
-- [Minecraft game wiki](final.html)
+- [Minecraft game wiki][quickref2]
 
 
 
