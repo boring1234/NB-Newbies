@@ -3,7 +3,7 @@ layout: default
 title:  Home
 ---
 
-<img src="https://github.com/boring1234/NB-Newbies/blob/main/docs/creeper_frontpage.jpeg"/>
+(creeper_frontpage.jpeg)
 
 Source code: https://github.com/USER/PROJECT (_fix this_)
 
