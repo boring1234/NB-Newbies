@@ -14,7 +14,9 @@ Our project focuses on making the agent survive as long as possible during a cre
 
 ## Approach
 
-The machine learning algorithms we used in this project is heavily based on Assginment 2, CS 175 fall 2020. We used multi-layer neural network and e-greedy learning policy to train our agent. The agent takes in a 1×1×11 matrix, and it returns an integer value that represents the next move it takes among {moving forward, moving backward, attacking}. By using the e-greedy policy, our agent chooses either to explore or to exploit according to a epsilon value growing by each iteration as well as a constant value R where 0<R<1. The activation functions (or layers) in our neural network model is still naive at this point. More trials would be needed before we decide what functions best fit our neural network. To evaluate the reward, we record the health power (HP) of the character at the end of each iteration. Moves that maximize the remaining HP would be prefered by our algorithm.
+The machine learning algorithms we used in this project is heavily based on Assginment 2, CS 175 fall 2020. We used multi-layer neural network and e-greedy learning policy to train our agent. The agent takes in a 1×1×11 matrix, and it returns an integer value that represents the next move it takes among {moving forward, moving backward, attacking}.
+By using the e-greedy policy, our agent chooses either to explore or to exploit according to a epsilon value growing by each iteration as well as a constant value R where 0<R<1. The activation functions (or layers) in our neural network model is still naive at this point. More trials would be needed before we decide what functions best fit our neural network.
+To evaluate the reward, we record the health power (HP) of the character at the end of each iteration. Moves that maximize the remaining HP would be prefered by our algorithm.
 
 ## Evaluation
 
@@ -23,6 +25,7 @@ Up till the status report, we ensure that the program runs as expected, while th
 
 #### Quantitive
 <img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/result.jpg"/>
+<br>
 The current result of our algorithm does not show any sign of learning. As we clarified in qualitive evaluation, one foundational problem is that we have not yet quantified the character's HP as the reward for ML algorithm. It results in 0 because nothing is counted towards the total reward at the end of each iteration. After the status report, we will update the reward calculation so that the agent can start learning.
 
 ## Remaining Goals and Challenges
