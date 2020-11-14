@@ -19,7 +19,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
-
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 # Hyperparameters
 SIZE = 50
 REWARD_DENSITY = .1
@@ -350,7 +350,7 @@ def log_returns(steps, returns):
     returns_smooth = np.convolve(returns, box, mode='same')
     plt.clf()
     plt.plot(steps, returns_smooth)
-    plt.title('Diamond Collector')
+    plt.title('Creeper Destroyer')
     plt.ylabel('Return')
     plt.xlabel('Steps')
     plt.savefig('returns.png')
