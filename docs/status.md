@@ -32,7 +32,19 @@ The current result of our algorithm does not show any sign of learning. As we cl
 
 ## Remaining Goals and Challenges
 
-
+Our future focus will be on the neural network construction and reward evaluation. Since our ML algorithm's input has 3 possible values at each observation position (instead of 2 in assignment 2), we will look up for suitable activation functions for our neural network. The reward evaluation is a little tricky because the character's health power regenerates if the explosion is not fatal. More adjustments on duration control will be needed in order to minimize the influence of health regeneration on our reward.
 
 ## Resources Used
-
+Source code of this project refer to Assginment 2, CS 175: Project in AI, Fall 2020, UCI
+<br><br>
+Minecraft platform supported by Malmo, Microsoft
+<br>
+https://github.com/microsoft/malmo
+<br><br>
+Epsilon Greedy Strategy refers to "Exploration vs. Exploitation - Learning the Optimal Reinforcement Learning Policy", deeplizard
+<br>
+https://www.youtube.com/watch?v=mo96Nqlo1L8&t=30s
+<br><br>
+Neuro Network architecture refers to "Building our Neural Network - Deep Learning and Neural Networks with Python and Pytorch p.3", sentdex
+<br>
+https://www.youtube.com/watch?v=ixathu7U-LQ&feature=youtu.be&t=210
