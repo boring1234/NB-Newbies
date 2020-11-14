@@ -18,7 +18,12 @@ The machine learning algorithms we used in this project is heavily based on Assg
 
 ## Evaluation
 
+#### Qualitative
+Up till the status report, we ensure that the program runs as expected, while the algorithm takes in accurate inputs (e.g. observation) and executes correctly. However, since we have not set up the reward calculation, we cannot output total reward after each iteration. At this point, any sequence of actions would result in 0, and thus make every move the same given each observation. This issue will be fixed after we fully construct our Q-network and handle the health power (HP) calculation.
 
+#### Quantitive
+<img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/result.jpg"/>
+The current result of our algorithm does not show any sign of learning. As we clarified in qualitive evaluation, one foundational problem is that we have not yet quantified the character's HP as the reward for ML algorithm. It results in 0 because nothing is counted towards the total reward at the end of each iteration. After the status report, we will update the reward calculation so that the agent can start learning.
 
 ## Remaining Goals and Challenges
 
