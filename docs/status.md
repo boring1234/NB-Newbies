@@ -4,6 +4,8 @@ title:  Status
 ---
 # Video Summary
 
+Video link: https://youtu.be/uHg_NpBoVXQ
+
 <iframe width="560" height="315" src="https://www.youtube.com/embed/uHg_NpBoVXQ?ecver=1" frameborder="0" allowfullscreen></iframe>
 
 ## Project Summary
