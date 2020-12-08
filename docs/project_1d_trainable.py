@@ -13,13 +13,13 @@ from collections import deque
 import matplotlib.pyplot as plt 
 import numpy as np
 from numpy.random import randint
-from numpy.random import rand
 
 import torch
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
+
 # Hyperparameters
 SIZE = 50
 REWARD_DENSITY = .1
@@ -37,25 +37,17 @@ LEARNING_RATE = 1e-4
 START_TRAINING = 500
 LEARN_FREQUENCY = 1
 ACTION_DICT = {
-    0: 'move 1',  # 向前一步
-    1: 'move -1',  # 向后一步
-    2: 'attack 1',  # 攻击
-    # 3: 'attack 0' # 停止攻击
+    0: 'move 1',
+    1: 'move -1',
+    2: 'attack 1'
 }
-
-
-
-DAMAGE_TO_SCORE_RATE = 0.2  
 
 CREEPER = 2
 GUNPOWDER = 1
 NOTHING = 0
-R = 0.25
+TOTAL_CREEPER = 0
 
-# Q-Value Network
 class QNetwork(nn.Module):
-
-
     def __init__(self, obs_size, action_size, hidden_size=100):
         super().__init__()
         self.net = nn.Sequential(nn.Linear(np.prod(obs_size), hidden_size),
@@ -70,7 +62,6 @@ class QNetwork(nn.Module):
 
 
 def GetMissionXML():
-
     return f'''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                 <About>
@@ -107,7 +98,7 @@ def GetMissionXML():
                         </Inventory>
                     </AgentStart>
                     <AgentHandlers>
-                        <DiscreteMovementCommands/>
+                        <ContinuousMovementCommands turnSpeedDegs="180"/>
                         <ObservationFromFullStats/>
                         <ObservationFromNearbyEntities>
                             <Range name="entities" xrange="{OBS_SIZE}" yrange="1" zrange="{OBS_SIZE}" />
@@ -138,17 +129,16 @@ def get_action(obs, q_network, epsilon, allow_attack_action):
             action_values[0, 2] = -float('inf')
 
         action_idx = torch.argmax(action_values).item()
-    # print (action_values, action_idx, allow_attack_action)
+
         
     if allow_attack_action:
         return action_idx if epsilon < 0.27 else random.randint(0, 2)
     else:
         return action_idx if epsilon < 0.27 else random.randint(0, 1)
 
+
 def init_malmo(agent_host):
-    """
-    Initialize new malmo mission.
-    """
+
     my_mission = MalmoPython.MissionSpec(GetMissionXML(), True)
     my_mission_record = MalmoPython.MissionRecordSpec()
     my_mission.requestVideo(800, 500)
@@ -156,7 +146,7 @@ def init_malmo(agent_host):
 
     max_retries = 3
     my_clients = MalmoPython.ClientPool()
-    my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10000)) # add Minecraft machines here as available
+    my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10000))
 
     for retry in range(max_retries):
         try:
@@ -172,17 +162,12 @@ def init_malmo(agent_host):
     return agent_host
 
 
-def get_observation(world_state, life):
-    """
-    Use the agent observation API to get a 2 x 5 x 5 grid around the agent. 
-    The agent is in the center square facing up.
-    Args
-        world_state: <object> current agent world state
-    Returns
-        observation: <np.array>
-    """
-    obs = np.zeros((1, 1, 2 * OBS_SIZE+1))  # 这里改了observation size
-    allow_attack_action = False
+def get_observation(world_state):
+
+    obs = np.zeros((1, 1, 2 * OBS_SIZE + 1))
+    CreeperInRange = False
+    life = 20
+
     while world_state.is_mission_running:
         time.sleep(0.1)
         world_state = agent_host.getWorldState()
@@ -190,32 +175,22 @@ def get_observation(world_state, life):
             raise AssertionError('Could not load grid.')
 
         if world_state.number_of_observations_since_last_state > 0:
-            # First we get the json from the observation API
             msg = world_state.observations[-1].text
             observations = json.loads(msg)
-            # print(observations)#added for debugging
-            """
-            what the above line prints when the agent looks a round or moves around:
-            
-            
-            """
-            # Get observation
             grid = observations['floorAll']
-            grid_binary = [GUNPOWDER if x == 'gunpowder' else NOTHING for x in grid]  ##这里把gunpowder设成1，不是gunpowder设成0
-            # print(grid_binary)
-            obs = np.reshape(grid_binary, (1, 1, 2*OBS_SIZE+1))  # 这里改了observation size
+            grid_binary = [GUNPOWDER if x == 'gunpowder' else NOTHING for x in grid]
+            obs = np.reshape(grid_binary, (1, 1, 2*OBS_SIZE+1))
+
             agent_Z = [ent['z'] for ent in observations['entities'] if ent['name']=='CS175CreeperSurviver'][0]
             for ent in observations['entities']:
                 if ent['name'] == 'Creeper':
-                    obs[0,0,round(ent['z']-agent_Z)+5] = CREEPER  ## 
-            for i in range(0, 8):
-                if(obs[0][0][i] == 2):
-                    print("get_obs: obs = {}".format(i))
-            ## 如果面前index上的值是2（creeper），那么可以攻击
-            allow_attack_action = obs[0][0][6] == 2
-            # allow_attack_action = observations['LineOfSight']['type'] == 'Creeper'
+                    obs[0,0,round(ent['z']-agent_Z)+5] = CREEPER
 
-            # Rotate observation with orientation of agent
+            if (observations['LineOfSight']['type'] == 'Creeper' and observations['LineOfSight']['inRange'] == True):
+                CreeperInRange=True
+
+            life =  observations['Life']
+
             yaw = observations['Yaw']
             if yaw == 270:
                 obs = np.rot90(obs, k=1, axes=(1, 2))
@@ -226,14 +201,16 @@ def get_observation(world_state, life):
             
             break
 
-    return obs, allow_attack_action
+    return obs, CreeperInRange, life
 
 
 def prepare_batch(replay_buffer):
     """
     Randomly sample batch from replay buffer and prepare tensors
+
     Args:
         replay_buffer (list): obs, action, next_obs, reward, done tuples
+
     Returns:
         obs (tensor): float tensor of size (BATCH_SIZE x obs_size
         action (tensor): long tensor of size (BATCH_SIZE)
@@ -254,6 +231,7 @@ def prepare_batch(replay_buffer):
 def learn(batch, optim, q_network, target_network):
     """
     Update Q-Network according to DQN Loss function
+
     Args:
         batch (tuple): tuple of obs, action, next_obs, reward, and done tensors
         optim (Adam): Q-Network optimizer
@@ -276,6 +254,7 @@ def learn(batch, optim, q_network, target_network):
 def log_returns(steps, returns):
     """
     Log the current returns as a graph and text file
+
     Args:
         steps (list): list of global steps after each episode
         returns (list): list of total return of each episode
@@ -284,7 +263,7 @@ def log_returns(steps, returns):
     returns_smooth = np.convolve(returns, box, mode='same')
     plt.clf()
     plt.plot(steps, returns_smooth)
-    plt.title('Creeper Destroyer')
+    plt.title('Diamond Collector')
     plt.ylabel('Return')
     plt.xlabel('Steps')
     plt.savefig('returns.png')
@@ -297,6 +276,7 @@ def log_returns(steps, returns):
 def train(agent_host):
     """
     Main loop for the DQN learning algorithm
+
     Args:
         agent_host (MalmoPython.AgentHost)
     """
@@ -318,7 +298,6 @@ def train(agent_host):
     start_time = time.time()
     returns = []
     steps = []
-    life = 20  ##这里life变量记录每次agent的血量，从而算出每次掉血多少
 
     # Begin main loop
     loop = tqdm(total=MAX_GLOBAL_STEPS, position=0, leave=False)
@@ -336,65 +315,46 @@ def train(agent_host):
             world_state = agent_host.getWorldState()
             for error in world_state.errors:
                 print("\nError:",error.text)
-        obs, allow_attack_action = get_observation(world_state, life)  ##这里pass进去life变量，同时return了life变量来修改life
-        ## 这里obs里，1代表gunpowder，2代表creeper，0代表没有东西
-        for i in range(3, 11):
-            if(obs[0][0][i] == 2):
-                print("while 1: obs = {}".format(i))
+        obs, CreeperInRange, life = get_observation(world_state)
+
         # Run episode
         while world_state.is_mission_running:
-
-
-            action_idx = get_action(obs, q_network, epsilon, allow_attack_action)
-            
+            # Get action
+            allow_break_action = CreeperInRange==True
+            action_idx = get_action(obs, q_network, epsilon, allow_break_action)
             command = ACTION_DICT[action_idx]
-            # if(command == 'attack 1'):
             # Take step
-            attacking = False
             agent_host.sendCommand(command)
-            if(command == 'attack 1'):
-                attacking = True
-                agent_host.sendCommand('attack 0')
-
+            print(command)
             # If your agent isn't registering reward you may need to increase this
             time.sleep(.1)
 
             # We have to manually calculate terminal state to give malmo time to register the end of the mission
             # If you see "commands connection is not open. Is the mission running?" you may need to increase this
             episode_step += 1
- 
-            if episode_step >= MAX_EPISODE_STEPS or\
-                ((obs[0][0][3]==2 or obs[0][0][4]==2 or obs[0][0][5]==2 or obs[0][0][6]==2 or obs[0][0][7]==2 or obs[0][0][8]==2) and (command == 'move 1' or command == 'move -1')):
+            if episode_step >= MAX_EPISODE_STEPS:
                 done = True
-                time.sleep(2)
-            for i in range(3, 11):
-                if(obs[0][0][i] == 2):
-                    print("while 2: obs = {}".format(i))
-            print(command)
+                time.sleep(2)  
+
             # Get next observation
             world_state = agent_host.getWorldState()
             for error in world_state.errors:
                 print("Error:", error.text)
-            next_obs, allow_attack_action = get_observation(world_state, life)
+            next_obs, next_CreeperInRange, next_life = get_observation(world_state) 
 
+            # Get reward
             reward = 0
             for r in world_state.rewards:
                 reward += r.getValue()
-                print("reward: {}".format(reward))
-            
-            for i in range(3, 8):
-                if (obs[0][0][i] == 2):
-                    reward -= 1
+                print("get rewared for attacking")
 
-            for i in range(0, 3):
-                if (obs[0][0][i] == 2):
-                    reward += 1
-            
+            if life < 20:
+                reward -= 1
+
             episode_return += reward
-
             # Store step in replay buffer
             replay_buffer.append((obs, action_idx, next_obs, reward, done))
-            obs = next_obs
+            obs, CreeperInRange, life = next_obs, next_CreeperInRange, next_life
 
             # Learn
             global_step += 1
