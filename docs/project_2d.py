@@ -205,12 +205,14 @@ def get_observation(world_state):
             # life =  observations['Life']
 
             yaw = observations['Yaw']
-            if yaw == 270:
+            if yaw > -135 and yaw < -45:
                 obs = np.rot90(obs, k=1, axes=(1, 2))
-            elif yaw == 0:
+            elif yaw > -45 and yaw < 45:
                 obs = np.rot90(obs, k=2, axes=(1, 2))
-            elif yaw == 90:
+            elif yaw > 45 and yaw < 135:
                 obs = np.rot90(obs, k=3, axes=(1, 2))
+            elif yaw > 135 and yaw < -135:
+                obs = np.rot90(obs, k=4, axes=(1, 2))
             
             break
 
