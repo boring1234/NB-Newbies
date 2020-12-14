@@ -22,7 +22,7 @@ from torch.utils.data import Dataset, DataLoader
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 # Hyperparameters
 SIZE = 50
-REWARD_DENSITY = .1
+REWARD_DENSITY = .009
 PENALTY_DENSITY = .02
 OBS_SIZE = 5
 MAX_EPISODE_STEPS = 100
@@ -85,7 +85,11 @@ class QNetwork(nn.Module):
 
 def GetMissionXML():
     #------------------------------------
-
+    myXML = ""
+    for x in range (-SIZE, SIZE):
+        for z in range(-SIZE, SIZE):
+            if np.random.uniform(0, 1) < REWARD_DENSITY:
+                myXML += "<DrawEntity x='{}'  y='2' z='{}' type='Creeper' />".format(x, z)
 
     #-------------------------------------
     return f'''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
@@ -116,7 +120,7 @@ def GetMissionXML():
                             <DrawCuboid x1="-24" x2="24" y1="2" y2="3" z1="-50" z2="-50" type="obsidian"/>
                             <DrawEntity x="0" y="2" z="-10" type="Creeper" yaw="0"/>
                             <DrawEntity x="-10" y="2" z="0" type="Creeper" yaw="0"/>
-                            
+                            {myXML}
 
                         </DrawingDecorator>
                         <ServerQuitWhenAnyAgentFinishes/>
