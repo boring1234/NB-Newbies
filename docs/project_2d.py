@@ -3,6 +3,7 @@ try:
 except:
     import MalmoPython
 
+from bs4 import BeautifulSoup
 import os
 import sys
 import time
@@ -19,7 +20,6 @@ import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
 
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
-
 # Hyperparameters
 SIZE = 50
 REWARD_DENSITY = .1
@@ -47,23 +47,47 @@ ACTION_DICT = {
 CREEPER = 2
 GUNPOWDER = 1
 NOTHING = 0
-TOTAL_CREEPER = 0
 
+# Q-Value Network
 class QNetwork(nn.Module):
+    #------------------------------------
+    #
+    #   TODO: Modify network architecture
+    #
+    #-------------------------------------
+
     def __init__(self, obs_size, action_size, hidden_size=100):
         super().__init__()
         self.net = nn.Sequential(nn.Linear(np.prod(obs_size), hidden_size),
                                  nn.ReLU(),
-                                 nn.Linear(hidden_size, action_size)) 
+                                 nn.Linear(hidden_size, 75),
+                                 nn.ReLU(), 
+                                 nn.Linear(75, 40),
+                                 nn.ReLU(), 
+                                 nn.Linear(40, 16),
+                                 nn.ReLU(), 
+                                 nn.Linear(16, action_size))
         
     def forward(self, obs):
+        """
+        Estimate q-values given obs
 
+        Args:
+            obs (tensor): current obs, size (batch x obs_size)
+
+        Returns:
+            q-values (tensor): estimated q-values, size (batch x action_size)
+        """
         batch_size = obs.shape[0]
         obs_flat = obs.view(batch_size, -1)
         return self.net(obs_flat)
 
 
 def GetMissionXML():
+    #------------------------------------
+
+
+    #-------------------------------------
     return f'''<?xml version="1.0" encoding="UTF-8" standalone="no" ?>
             <Mission xmlns="http://ProjectMalmo.microsoft.com" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
                 <About>
@@ -73,7 +97,7 @@ def GetMissionXML():
                     <ServerInitialConditions>
                         <Time>
                             <StartTime>12000</StartTime>
-                            <AllowPassageOfTime>true</AllowPassageOfTime>
+                            <AllowPassageOfTime>false</AllowPassageOfTime>
                         </Time>
                         <Weather>clear</Weather>
                     </ServerInitialConditions>
@@ -90,8 +114,9 @@ def GetMissionXML():
                             
                             <DrawCuboid x1="-24" x2="24" y1="2" y2="3" z1="50" z2="50" type="obsidian"/>
                             <DrawCuboid x1="-24" x2="24" y1="2" y2="3" z1="-50" z2="-50" type="obsidian"/>
+                            <DrawEntity x="0" y="2" z="-10" type="Creeper" yaw="0"/>
+                            <DrawEntity x="-10" y="2" z="0" type="Creeper" yaw="0"/>
                             
-                            <DrawEntity x="0.5" y="2" z="10" type="Creeper" yaw="0"/>
 
                         </DrawingDecorator>
                         <ServerQuitWhenAnyAgentFinishes/>
@@ -100,13 +125,13 @@ def GetMissionXML():
                 <AgentSection mode="Survival">
                     <Name>CS175CreeperSurviver</Name>
                     <AgentStart>
-                        <Placement x="0.5" y="2" z="0.5" pitch="30" yaw="0"/>
+                        <Placement x="0" y="2" z="0" pitch="30" yaw="180"/>
                         <Inventory>
                             <InventoryItem slot="0" type="diamond_sword"/>
                         </Inventory>
                     </AgentStart>
                     <AgentHandlers>
-                        <ContinuousMovementCommands turnSpeedDegs="180"/>
+                        <ContinuousMovementCommands/>
                         <ObservationFromFullStats/>
                         <ObservationFromNearbyEntities>
                             <Range name="entities" xrange="{OBS_SIZE}" yrange="1" zrange="{OBS_SIZE}" />
@@ -127,35 +152,60 @@ def GetMissionXML():
             </Mission>'''
 
 
-def get_action(obs, q_network, epsilon, allow_attack_action):
+def get_action(obs, q_network, epsilon, allow_break_action):
+    """
+    Select action according to e-greedy policy
+
+    Args:
+        obs (np-array): current observation, size (obs_size)
+        q_network (QNetwork): Q-Network
+        epsilon (float): probability of choosing a random action
+
+    Returns:
+        action (int): chosen action [0, action_size)
+    """
+    #------------------------------------
+    #
+    #   TODO: Implement e-greedy policy
+    #
+    if np.random.ranf() <= epsilon:
+        if allow_break_action:
+            return np.random.choice([0, 1, 2, 3, 4])
+        return np.random.choice([0, 1, 2, 3])
 
 
+    #-------------------------------------
+
+    # Prevent computation graph from being calculated
     with torch.no_grad():
+        # Calculate Q-values fot each action
         obs_torch = torch.tensor(obs.copy(), dtype=torch.float).unsqueeze(0)
         action_values = q_network(obs_torch)
 
-        if not allow_attack_action:
-            action_values[0, 4] = -float('inf')
+        # Remove attack/mine from possible actions if not facing a diamond
+        if not allow_break_action:
+            action_values[0, 4] = -float('inf')  
 
+        # Select action with highest Q-value
         action_idx = torch.argmax(action_values).item()
-
         
-    if allow_attack_action:
-        return action_idx if epsilon < 0.27 else random.randint(0, 4)
-    else:
-        return action_idx if epsilon < 0.27 else random.randint(0, 3)
+    return action_idx
 
 
 def init_malmo(agent_host):
-
+    """
+    Initialize new malmo mission.
+    """
     my_mission = MalmoPython.MissionSpec(GetMissionXML(), True)
+    # myxml = my_mission.getAsXML(True)
+    # print(BeautifulSoup(myxml, "xml").prettify())
     my_mission_record = MalmoPython.MissionRecordSpec()
     my_mission.requestVideo(800, 500)
     my_mission.setViewpoint(1)
 
     max_retries = 3
     my_clients = MalmoPython.ClientPool()
-    my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10000))
+    my_clients.add(MalmoPython.ClientInfo('127.0.0.1', 10000)) # add Minecraft machines here as available
 
     for retry in range(max_retries):
         try:
@@ -172,12 +222,12 @@ def init_malmo(agent_host):
 
 
 def get_observation(world_state):
+    
 
     obs = np.zeros((1, 2 * OBS_SIZE + 1, 2 * OBS_SIZE + 1))
-    # print(obs)
     CreeperInRange = False
     life = 20
-
+    
     while world_state.is_mission_running:
         time.sleep(0.1)
         world_state = agent_host.getWorldState()
@@ -185,26 +235,31 @@ def get_observation(world_state):
             raise AssertionError('Could not load grid.')
 
         if world_state.number_of_observations_since_last_state > 0:
+            # First we get the json from the observation API
             msg = world_state.observations[-1].text
             observations = json.loads(msg)
             # print(json.dumps(observations, indent=4, sort_keys=True))
+            # Get observation
             grid = observations['floorAll']
+            # print("len: {}".format(len(grid)))
             grid_binary = [GUNPOWDER if x == 'gunpowder' else NOTHING for x in grid]
             obs = np.reshape(grid_binary, (1, 2 * OBS_SIZE + 1, 2 * OBS_SIZE + 1))
-            # print(obs)
-
+            
             agent_Z = [ent['z'] for ent in observations['entities'] if ent['name']=='CS175CreeperSurviver'][0]
+
+            agent_X = [ent['x'] for ent in observations['entities'] if ent['name']=='CS175CreeperSurviver'][0]
+            
             for ent in observations['entities']:
                 if ent['name'] == 'Creeper':
-                    obs[0,round(ent['z']-agent_Z)+5,round(ent['z']-agent_Z)+5] = CREEPER
-            print (obs)
+                    obs[0,round(ent['z']-agent_Z)+5, round(ent['x']-agent_X)+5] = CREEPER
+            # Rotate observation with orientation of agent
             if (observations['LineOfSight']['type'] == 'Creeper' and observations['LineOfSight']['inRange'] == True):
-                CreeperInRange=True
+                CreeperInRange = True
 
-
-            # life =  observations['Life']
+            life =  observations['Life']
 
             yaw = observations['Yaw']
+            print(yaw)
             if yaw > -135 and yaw < -45:
                 obs = np.rot90(obs, k=1, axes=(1, 2))
             elif yaw > -45 and yaw < 45:
@@ -213,9 +268,8 @@ def get_observation(world_state):
                 obs = np.rot90(obs, k=3, axes=(1, 2))
             elif yaw > 135 and yaw < -135:
                 obs = np.rot90(obs, k=4, axes=(1, 2))
-            
             break
-
+    print(obs)
     return obs, CreeperInRange, life
 
 
@@ -321,6 +375,7 @@ def train(agent_host):
         episode_return = 0
         episode_loss = 0
         done = False
+
         # Setup Malmo
         agent_host = init_malmo(agent_host)
         world_state = agent_host.getWorldState()
@@ -330,23 +385,25 @@ def train(agent_host):
             for error in world_state.errors:
                 print("\nError:",error.text)
         obs, CreeperInRange, life = get_observation(world_state)
+        # print(obs)
         # Run episode
-        creeper_dict = {}
         while world_state.is_mission_running:
             # Get action
-            
-
-            allow_break_action = CreeperInRange==True
+            # allow_break_action = obs[0, 0, int(OBS_SIZE/2)] == 1
+            # allow_break_action = obs[0, int(OBS_SIZE/2), 0] == 1
+            allow_break_action = CreeperInRange == True
             action_idx = get_action(obs, q_network, epsilon, allow_break_action)
             command = ACTION_DICT[action_idx]
+            print(command)
             # Take step
             agent_host.sendCommand(command)
+
             # If your agent isn't registering reward you may need to increase this
             time.sleep(.1)
 
             # We have to manually calculate terminal state to give malmo time to register the end of the mission
             # If you see "commands connection is not open. Is the mission running?" you may need to increase this
-            episode_step += 1
+            episode_step += 1  
             if episode_step >= MAX_EPISODE_STEPS or life == 0:
                 done = True
                 time.sleep(2)  
@@ -369,16 +426,17 @@ def train(agent_host):
                 reward -= 1.5
 
             if life > 15 and life < 20 :
-                reward += 10
+                reward += 7
 
             if life == 0:
                 print("i am dead")
-                reward -= 20
+                reward -= 10
 
-            episode_return += reward
             # Store step in replay buffer
             replay_buffer.append((obs, action_idx, next_obs, reward, done))
-            obs, CreeperInRange, life = next_obs, next_CreeperInRange, next_life
+            obs = next_obs
+            CreeperInRange = next_CreeperInRange
+            life = next_life
 
             # Learn
             global_step += 1
