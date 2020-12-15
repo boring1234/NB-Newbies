@@ -350,33 +350,33 @@ class DiamondCollector(gym.Env):
                 if 'floorAll' in observations:
                     grid = observations['floorAll']
                 
-                grid_binary = [self.GUNPOWDER if x == 'gunpowder' else self.NOTHING for x in grid]
-                obs = np.reshape(grid_binary, (1, 2*self.obs_size+1, 2*self.obs_size+1)) # (1,11,11) observation size
+                    grid_binary = [self.GUNPOWDER if x == 'gunpowder' else self.NOTHING for x in grid]
+                    obs = np.reshape(grid_binary, (1, 2*self.obs_size+1, 2*self.obs_size+1)) # (1,11,11) observation size
 
-                agent_Z = [ent['z'] for ent in observations['entities'] if ent['name']=='CS175CreeperSurviver'][0]
-                agent_X = [ent['x'] for ent in observations['entities'] if ent['name']=='CS175CreeperSurviver'][0]
+                    agent_Z = [ent['z'] for ent in observations['entities'] if ent['name']=='CS175CreeperSurviver'][0]
+                    agent_X = [ent['x'] for ent in observations['entities'] if ent['name']=='CS175CreeperSurviver'][0]
 
-                for ent in observations['entities']:
-                    if ent['name'] == 'Creeper':
-                        obs[0,round(ent['z']-agent_Z)+5, round(ent['x']-agent_X)+5] = self.CREEPER  ## 
-                for i in range(0, 8):
-                    if(obs[0][0][i] == 2):
-                        print("get_obs: obs = {}".format(i))
+                    for ent in observations['entities']:
+                        if ent['name'] == 'Creeper':
+                            obs[0,round(ent['z']-agent_Z)+5, round(ent['x']-agent_X)+5] = self.CREEPER  ## 
+                    for i in range(0, 8):
+                        if(obs[0][0][i] == 2):
+                            print("get_obs: obs = {}".format(i))
 
-                allow_attack_action = (observations['LineOfSight']['type'] == 'Creeper' and observations['LineOfSight']['inRange'] == True)
+                    allow_attack_action = (observations['LineOfSight']['type'] == 'Creeper' and observations['LineOfSight']['inRange'] == True)
 
-                # Rotate observation with orientation of agent
-                yaw = observations['Yaw']
-                print(yaw)
-                if yaw > -135 and yaw < -45:
-                    obs = np.rot90(obs, k=1, axes=(1, 2))
-                elif yaw > -45 and yaw < 45:
-                    obs = np.rot90(obs, k=2, axes=(1, 2))
-                elif yaw > 45 and yaw < 135:
-                    obs = np.rot90(obs, k=3, axes=(1, 2))
-                elif yaw > 135 and yaw < -135:
-                    obs = np.rot90(obs, k=4, axes=(1, 2))
-                break
+                    # Rotate observation with orientation of agent
+                    yaw = observations['Yaw']
+                    print(yaw)
+                    if yaw > -135 and yaw < -45:
+                        obs = np.rot90(obs, k=1, axes=(1, 2))
+                    elif yaw > -45 and yaw < 45:
+                        obs = np.rot90(obs, k=2, axes=(1, 2))
+                    elif yaw > 45 and yaw < 135:
+                        obs = np.rot90(obs, k=3, axes=(1, 2))
+                    elif yaw > 135 and yaw < -135:
+                        obs = np.rot90(obs, k=4, axes=(1, 2))
+                    break
         
         print(obs)
         return obs, allow_attack_action, life
