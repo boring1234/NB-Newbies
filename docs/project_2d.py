@@ -435,7 +435,7 @@ def train(agent_host):
             if life == 0:
                 print("i am dead")
                 reward -= 10
-
+            episode_return += reward
             # Store step in replay buffer
             replay_buffer.append((obs, action_idx, next_obs, reward, done))
             obs = next_obs
