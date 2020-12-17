@@ -31,7 +31,7 @@ class DiamondCollector(gym.Env):
     def __init__(self, env_config):  
         # Static Parameters
         self.size = 50
-        self.reward_density = .0009
+        self.reward_density = .002
         self.penalty_density = .02
         self.obs_size = 5
         self.max_episode_steps = 100
@@ -103,6 +103,7 @@ class DiamondCollector(gym.Env):
         self.steps.append(current_step + self.episode_step)
         self.episode_return = 0
         self.episode_step = 0
+        self.life = 20
 
         # Log
         if len(self.returns) > self.log_frequency and \
@@ -172,7 +173,7 @@ class DiamondCollector(gym.Env):
         world_state = self.agent_host.getWorldState()
         for error in world_state.errors:
             print("Error:", error.text)
-        self.obs, self.allow_attack_action, self.life = self.get_observation(world_state)
+        self.obs, self.allow_attack_action, current_life = self.get_observation(world_state)
 
         # Get Done
         done = not world_state.is_mission_running
@@ -183,19 +184,17 @@ class DiamondCollector(gym.Env):
             reward += r.getValue()
             print("reward: {}".format(reward))
 
-        if self.life < 10 and self.life > 0 :
-            reward -= 3
-        
-        if self.life > 10 and self.life < 15 :
-            reward -= 1.5
+        if current_life >= self.life:
+            reward += 1
+        else:
+            reward -= (self.life - current_life)
 
-        if self.life > 15 and self.life < 20 :
-            reward += 7
-
-        if self.life == 0:
+        if current_life == 0:
             print("i am dead")
-            reward -= 10
 
+        self.life = current_life
+        print ("Remaining HP:", self.life)
+        
         self.episode_return += reward
 
         return self.obs.flatten(), reward, done, dict()
