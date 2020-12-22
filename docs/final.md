@@ -196,17 +196,14 @@ Up till the status report, we ensure that the program runs as expected, while th
 The current result of our algorithm does not show any sign of learning. As we clarified in qualitive evaluation, one foundational problem is that we have not yet quantified the character's HP as the reward for ML algorithm. It results in 0 because nothing is counted towards the total reward at the end of each iteration. After the status report, we will update the reward calculation so that the agent can start learning.
 
 #### Final Quarter Report
-
-<!---An important aspect of your project, as I’ve mentioned several times now, is evaluating your project. Be clear and precise about describing the evaluation setup, for both quantitative and qualitative results. Present the results to convince the reader that you have solved the problem, to whatever extent you claim you have. Use plots, charts, tables, screenshots, ﬁgures, etc. as needed. I expect you will need at least a few paragraphs to describe each type of evaluation that you perform.--->
-<br>
 ###### Qualitative
-<br>
 Enlightened by our TA's tutorial video, we changed our project into 2-dimensional continuous setting and utilized Proximal Policy Optimization from RLlib. With a series of changes in world generation, input manipulation, and reward calculations, our AI turned out to learn effectively. In our video, we can clearly see that, in both trials, the character does his best to get away from every creeper he percepted. Before training, he could hardly keep distance from creepers' explosion radius. Later, he can survive a few consecutive episodes and barely be damaged by the explosion. We were even convinced that, in the "with attack" case, the AI optains some higher-level skills like utilize one creeper's explosion to distroy others.
 <br>
-
+<img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/utilize explosion.png"/>
 <br>
 One piece of drawback in our final performance is the AI's movement. Since we used the 90-degree-based rotation to manipulate AI's perception, it has to turn around awkwardly to "see" the creepers so that they appear in the correct coordination of input matrix.
 <br>
+
 ###### Quantitive
 <img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/result_project_2d_trainable.png"/>
 <br>
