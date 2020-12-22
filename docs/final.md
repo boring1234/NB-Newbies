@@ -81,7 +81,7 @@ For our third approach, we decided to use 2-d map for our project using q-learni
 
 In this approach set, first, we keep the gunpowder here to see if it is useful or not. For the action space, we add turn 1 and turn -1(turn left and turn right) to the action set so that the agent can move to anywhere he wants. This time, we changed our reward based on the health level of the agent. If the agent has a high health level, he will get a positive reward and if he has a low health level, we will deduct the reward. If the agent died, it will get a really bad reward. We choose this health because based on the wiki of Minecraft, the average damage of creeper is around 5. This time, we get a pretty good result after around 120000 steps as shown below:
 
-<img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/2.JPG"/>
+<img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/2.JPG" width="560"/>
 
 The reward change from -25 to 0 after around 120000 steps of training. When we try to print out the gunpowder data in each episode, we found that the number is always 0 and as we checked the agent movement at the end of the training, we found that it is impossible for the agent to learn how to kill a creeper since it is too hard for him and we also cannot make sure the agent can observe the gunpowder if there is one. Thus, we decided to delete gunpowder. Besides, because we think that the agent cannot kill the creepers, we also decided to delete the attack action here. Finally, for the reward, because we are trying to improve our learning, we communicated with our TA and we think that it will be better if the reward can dynamically change based on the damage it gets from every step. 
 
@@ -134,7 +134,7 @@ get the 'Yaw' data and change the observation based on the number of Yaw
 
 However, this time, we did not get what we expected:
 
-<img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/3.JPG"/>
+<img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/3.JPG" width="560"/>
 
 We expected the learning to be much better, however, it is not better than the previous learning. We summarize what we changed in this approach and we found that it can only because we delete the attack action. And then, we checked online and we found that if the creepers are attacked by the agent, the creeper will start to explode without being within 1 block away from the agent. Thus, at last, we decided to add back attack action. Besides, we also add some parameters in the return text and png file. We added the number of the steps for each episode, the number of creepers that have chased the agent for each episode, and the steps that the agent moved with creepers around him. These data can help us find that if our train is working or not. Our final stage approach set is as follows: 
 
@@ -171,11 +171,11 @@ We also changed the send command code like this:
 
 This time, we need to consider if we need to send the attack 0 commands or not. Our result is as follows:
 
-<img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/4.PNG"/>
+<img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/4.PNG" width="560"/>
 
 AND 
 
-<img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/5.PNG"/>
+<img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/5.PNG" width="560"/>
 
 As you can see we have a pretty good result in around 250000 steps. We also can see that the steps that the agent can survive for every episode increase a lot. The data for the steps that the agent followed by creepers also increase and this data will help us ignore the situation that the agent moved around with no creepers around. 
 
