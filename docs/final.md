@@ -27,85 +27,85 @@ By using the e-greedy policy, our agent chooses either to explore or to exploit 
 To evaluate the reward, we record the health power (HP) of the character at the end of each iteration. Moves that maximize the remaining HP would be prefered by our algorithm.
 
 #### Final Quarter Report
-First, we decided to start our project in a 1-dimensional map. The agent can only move forward, move backward and attack and one creeper will appear 5 blocks away from the agent. We want to see that if the agent can successfully learn how to get away from the creepers after training by q-network and sequential model. In this approach, our approach set is as following(Observation, Reward, Action, Terminal). 
+First, we decided to start our project on a 1-dimensional map. The agent can only move forward, move backward and attack and one creeper will appear 5 blocks away from the agent. We want to see that if the agent can successfully learn how to get away from the creepers after training by q-network and sequential model. In this approach, our approach set is as following(Observation, Reward, Action, Terminal). 
 
 	Episode: Play through the environment
-	Survive from Creepers(1-d)
+		Survive from Creepers(1-d)
 	Observation:
 		get_observation(world_state)
 		zero numpy array(1, 1, 11)
-			channel 0: NOTHING
-			channel 1: Gunpowder(not use anymore at last)
-			channel 2: Creeper
+		channel 0: NOTHING
+		channel 1: Gunpowder(not use anymore at last)
+		channel 2: Creeper
 	Action
 		Discrete(4)
-			move forward, move backward, attack, stop attacking
+		move forward, move backward, attack, stop attacking
 	Reward
 		+1 if Creepers is more than 3 blocks away from agent
 		-1 if Creepers is within 3 blocks away from the agent
 	Terminal
 		After 20 steps or die from explosion of Creepers
 
-In this approach, we decided to make our observation 5 blocks backward and frontward from the agent because the Creepers will be attacked only if the agent is within 5 blocks away from them and we want to minimize our observation size to decrease the running time and avoid unnecessary running. We decided to record three type of things on the floor(Creepers, Nothing, Gunpowder). We want the Creepers and Nothing to calculate the distance from the Creepers and we want the gunpowder to record how many Creepers the agent can learn to kill after training. However, we found that the Gunpowder does not really work for 1-d dimension because first, it is too hard for agent to learn how to kill a creepers(even hard for a human player) within such a short term of training(We set our total step to 4000 for this approach), and second it is also inaccurate to count the killed Creepers by this because the agent might not observe the gunpowder if he move away after killing the Creepers and other Creepers explosion can destroy the gunpowder as well. But we want to keep this for 2-d version because if we increase the training time and steps for every episode, we might get a better results from this. Also, for the attack action we met some difficulties because the agent keep destroying the floor. After we check the Malmo missionhandler file, we find that we need to add attack 0(stop attacking) into the action space. However, for here we force to send attack 0 command after sending attack 1 command because it will only be usable if the agent is attacking. 
+In this approach, we decided to make our observation 5 blocks backward and frontward from the agent because the Creepers will be attacked only if the agent is within 5 blocks away from them and we want to minimize our observation size to decrease the running time and avoid unnecessary running. We decided to record three types of things on the floor(Creepers, Nothing, Gunpowder). We want the Creepers and Nothing to calculate the distance from the Creepers and we want the gunpowder to record how many Creepers the agent can learn to kill after training. However, we found that the Gunpowder does not really work for the 1-d dimension because first, it is too hard for an agent to learn how to kill creepers (even hard for a human player) within such a short term of training(We set our total step to 4000 for this approach), and second it is also inaccurate to count the killed Creepers by this because the agent might not observe the gunpowder if he moves away after killing the Creepers and other Creepers explosion can destroy the gunpowder as well. But we want to keep this for a 2-d version because if we increase the training time and steps for every episode, we might get better results from this. Also, for the attack action, we met some difficulties because the agent keeps destroying the floor. After we check the Malmo mission handler file, we find that we need to add attack 0(stop attacking) into the action space. However, here we force to send attack 0 commands after sending the attack 1 command because it will only be usable if the agent is attacking. 
 The result of this approach is as follow:
 
 Image 1
 
-As we can see, The reward increase from average 3 to 7 after around 3000 steps training, which is a pretty small training and a good result we think. 
+As we can see, The reward increase from an average of 3 to 7 after around 3000 steps training, which is a pretty small training and a good result we think. 
 
-After implementing our algorithm through Q-network, we decided to change our algorithm to RLlib, using gym library instead. The reason that we use RLlib is because of the suggestion of our TA and he told us that the deep reinforcement learning would train the agent better than Q-network. For the 1-d rllib version project, we did not train it because we want to save time and move on to the 2-d version. 
+After implementing our algorithm through Q-network, we decided to change our algorithm to RLlib, using gym library instead. The reason that we use RLlib is because of the suggestion of our TA and he told us that deep reinforcement learning would train the agent better than Q-network. For the 1-d rllib version project, we did not train it because we want to save time and move on to the 2-d version. 
 
 For our third approach, we decided to use 2-d map for our project using q-learning(The reason why we did not implemented it using RLlib is that we wrote 1-d RLlib and 2-d q-network at the same time). This time our approach set changed to this:
 
 	Episode: Playthrough of the environment
-	Survive from Creepers
+		Survive from Creepers
 	Observation:
-		get_observation(world_state)
+	get_observation(world_state)
 		zero numpy array(1, 11, 11)
-			channel 1: NOTHING
-			channel 2: Gunpowder(not use anymore at last)
-			channel 3: Creeper
+		channel 1: NOTHING
+		channel 2: Gunpowder(not use anymore at last)
+	channel 3: Creeper
 	Action
 		Discrete(6,)
-			forward, backward, turn left, turn right, attack, not attack
+		forward, backward, turn left, turn right, attack, not attack
 		channel one: 0: move 1, 1: move 0
-		channel two: 0: turn 1,   1: turn -1
+		channel two: 0: turn 1, 1: turn -1
 		channel three: 0: attack 1, 1: attack 0
 	Reward
-		+7 if agent’s health level is above 15
-		-1.5 if agent’s health level is below 15, above 10
-		-3 if agent’s health level is below 10
+		+7 if agent's health level is above 15
+		-1.5 if agent's health level is below 15, above 10
+		-3 if agent's health level is below 10
 		-20 if agent died
 	Terminal
 		After 100 steps or die from explosion of Creepers
 
-In this approach set, first, we keep the gunpowder here to see if it is useful or not. For the action space, we add turn 1 and turn -1(turn left and turn right) to the action set so that the agent can move to anywhere he want. This time, we changed our reward based on the health level of the agent. If the agent has a high health level, he will get a positive reward and if he has a low health level, we will deduct the reward. If the agent died, it will get a really bad reward. We choose this health because based on the wiki of Minecraft, the average damage of creeper is around 5. This time, we get a pretty good result after around 120000 steps as shown below:
+In this approach set, first, we keep the gunpowder here to see if it is useful or not. For the action space, we add turn 1 and turn -1(turn left and turn right) to the action set so that the agent can move to anywhere he wants. This time, we changed our reward based on the health level of the agent. If the agent has a high health level, he will get a positive reward and if he has a low health level, we will deduct the reward. If the agent died, it will get a really bad reward. We choose this health because based on the wiki of Minecraft, the average damage of creeper is around 5. This time, we get a pretty good result after around 120000 steps as shown below:
 
 Image 2
 
-The reward change from -25 to 0 after around 120000 steps training. When we try to print out the gunpowder data in each episode, we found that the number is always 0 and as we checked the agent movement at the end of the training, we found that it is impossible for the agent to learn how to kill a creeper since it is too hard for him and we also cannot make sure the agent can observe the gunpowder if there is one. Thus, we decided to delete gunpowder. Besides, because we think that the agent cannot kill the creepers, we also decided to delete the attack action here. Finally, for the reward, because we are trying to improve our learning, we communicated with our TA and we think that it will be better if the reward can dynamically change based on the damage it get from every step. 
+The reward change from -25 to 0 after around 120000 steps of training. When we try to print out the gunpowder data in each episode, we found that the number is always 0 and as we checked the agent movement at the end of the training, we found that it is impossible for the agent to learn how to kill a creeper since it is too hard for him and we also cannot make sure the agent can observe the gunpowder if there is one. Thus, we decided to delete gunpowder. Besides, because we think that the agent cannot kill the creepers, we also decided to delete the attack action here. Finally, for the reward, because we are trying to improve our learning, we communicated with our TA and we think that it will be better if the reward can dynamically change based on the damage it gets from every step. 
 
-In our next approach, instead of changing the approach set, we also decided to use rllib to improve our training. Besides, we also found a problem while running the previous discrete movement settings. The damage reward attribute in XML does not really work because the reward and observationFromRay are not working for the discrete setting. So we decided to move on to continuous setting for the agent. This will also let the agent move freely in the Minecraft world without bounding by the block in it. Because the Creepers is continuous setting, it will also make the agent move faster to get away from Creepers and improve learning in some way. Our approach set is as following:
+In our next approach, instead of changing the approach set, we also decided to use rllib to improve our training. Besides, we also found a problem while running the previous discrete movement settings. The damage reward attribute in XML does not really work because the reward and observationFromRay are not working for the discrete setting. So we decided to move on to a continuous setting for the agent. This will also let the agent move freely in the Minecraft world without bounding by the block in it. Because the Creepers is a continuous setting, it will also make the agent move faster to get away from Creepers and improve learning in some way. Our approach set is as follows:
 
 	Episode: Playthrough of the environment
-	Survive from Creepers
+		Survive from Creepers
 	Observation:
 		get_observation(world_state)
 		zero numpy array(1, 11, 11)
-			channel 1: NOTHING
-			channel 2: Creeper
+		channel 1: NOTHING
+		channel 2: Creeper
 	Action
 		Continuous(4,)
-			forward, backward, turn left, turn right
+		forward, backward, turn left, turn right
 		channel one: 0: move 1, 1: move 0
-		channel two: 0: turn 1,   1: turn -1
+		channel two: 0: turn 1, 1: turn -1
 	Reward
 		+1 for no damage and start healing
 		-X (X=damage the agent get from creepers) for damage from creepers, scaled by health damage the agent get
 
 		-10(extra) if the agent died, it will get a 10 extra deduction of the reward
 	Terminal
-		After 100 steps or die from explosion of Creepers
+		After 100 steps or die from the explosion of Creepers
 
 As you can see, we changed our approach set as above. This time, our project is getting closer to our final stage and here is how our final code work here. 
 self.action_space = Box(-1, 1, shape=(2,), dtype=np.float32)
@@ -119,62 +119,63 @@ The action_space will have actually two channels and each will three parameters:
 		check if the episode is finished: done
 		get the reward from XML
 		if current_life >= previous_life:
-		    reward += 1
+			reward += 1
 		else:
-		    reward -= (previous_life - current_life)
+			reward -= (previous_life - current_life)
 		if current_life == 0:
-		    reward -= 10
+			reward -= 10
 
-	Def get_observation(world_state):
-		initialize observation size: [1, 11, 11]
-		check if the world state is running
-		find the location of the creepers and the agent based on the information in world state
-		calculate which block the creepers and agent is in and assign the creepers into the observation
-		get the ‘Yaw’ data and change the observation based on the number of Yaw
+Def get_observation(world_state):
+initialize observation size: [1, 11, 11]
+check if the world state is running
+find the location of the creepers and the agent based on the information in the world state
+calculate which block the creepers and agent is in and assign the creepers into the observation
+get the 'Yaw' data and change the observation based on the number of Yaw
 
 However, this time, we did not get what we expected:
 Image 3
-We expected the learning to be much better, however, it is not better than the previous learning. We summarize what we changed in this approach and we found that it can only because we delete the attack action. And then, we checked online and we found that if the creepers is attacked by the agent, the creeper will start explode without be within 1 block away from the agent. Thus, at last, we decided to add back attack action. Besides, we also add some parameters in the return txt and png file. We added the number of the steps for each episode, the number of creepers that has chased the agent for each episode and the steps that the agent moved with creepers around him. These data can hep us find that if our train is working or not. Our final stage approach set is as following: 
+We expected the learning to be much better, however, it is not better than the previous learning. We summarize what we changed in this approach and we found that it can only because we delete the attack action. And then, we checked online and we found that if the creepers are attacked by the agent, the creeper will start to explode without being within 1 block away from the agent. Thus, at last, we decided to add back attack action. Besides, we also add some parameters in the return text and png file. We added the number of the steps for each episode, the number of creepers that have chased the agent for each episode, and the steps that the agent moved with creepers around him. These data can help us find that if our train is working or not. Our final stage approach set is as follows: 
 
 	Episode: Playthrough of the environment
-	Survive from Creepers
+		Survive from Creepers
 	Observation:
 		get_observation(world_state)
 		zero numpy array(1, 11, 11)
-			channel 1: NOTHING
-			channel 2: Creeper
+		channel 1: NOTHING
+		channel 2: Creeper
 	Action
 		Continuous(4,)
-			forward, backward, turn left, turn right, attack, stop attacking
+		forward, backward, turn left, turn right, attack, stop attacking
 	Reward
 		+1 for no damage and start healing
 		-X (X=damage it get from creepers) for damage from creepers, scaled by health damage it get
 
 		-10(extra) if the agent died, it will get a 10 extra deduction of the reward
 	Terminal
-		After 100 steps or die from explosion of Creepers
+		After 100 steps or die from the explosion of Creepers
 
 We also changed the send command code like this:
 
 	if self.allow_attack_action and action[2]>0:
-		    self.agent_host.sendCommand('move 0')
-		    self.agent_host.sendCommand('turn 0')
-		    self.agent_host.sendCommand('attack 1')
-		    time.sleep(1)
-		else:
-		    self.agent_host.sendCommand('attack 0')
-		    self.agent_host.sendCommand('move {:30.1f}'.format(action[0]))
-		    self.agent_host.sendCommand('turn {:30.1f}'.format(action[1]))
-		    time.sleep(.2)
+		self.agent_host.sendCommand('move 0')
+		self.agent_host.sendCommand('turn 0')
+		self.agent_host.sendCommand('attack 1')
+		time.sleep(1)
+	else:
+		self.agent_host.sendCommand('attack 0')
+		self.agent_host.sendCommand('move {:30.1f}'.format(action[0]))
+		self.agent_host.sendCommand('turn {:30.1f}'.format(action[1]))
+		time.sleep(.2)
 
-This time, we need to consider if we need to send attack 0 command or not. Our result is as following:
+This time, we need to consider if we need to send the attack 0 commands or not. Our result is as follows:
 
 Image 4
 Image 5
 
 As you can see we have a pretty good result in around 250000 steps. We also can see that the steps that the agent can survive for every episode increase a lot. The data for the steps that the agent followed by creepers also increase and this data will help us ignore the situation that the agent moved around with no creepers around. 
 
-Well, Finally, as shown in the video below, we found that the agent also learn something amazing: the agent will Wait for the creepers get closer and move away immediately, which is the best way to make the creeper explode without hurt himself. 
+Well, Finally, as shown in the video below, we found that the agent also learns something amazing: the agent will Wait for the creepers to get closer and move away immediately, which is the best way to make the creeper explode without hurt himself. 
+
 Video 1
 
 <!---Use another level-two header called Approaches, In this section, describe both the baselines and your proposed approach(es). Describe precisely what the advantages and disadvantages of each are, for example, why one might be more accurate, need less data, take more time, overﬁt, and so on. Include enough technical information to be able to (mostly) reproduce your project, in particular, use pseudocode and equations as much as possible.--->
