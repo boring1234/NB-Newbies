@@ -171,11 +171,11 @@ We also changed the send command code like this:
 
 This time, we need to consider if we need to send the attack 0 commands or not. Our result is as follows:
 
-<img src="https://github.com/boring1234/NB-Newbies/blob/main/docs/4.JPG"/>
+<img src="https://github.com/boring1234/NB-Newbies/blob/main/docs/4.PNG"/>
 
 AND 
 
-<img src="https://github.com/boring1234/NB-Newbies/blob/main/docs/5.JPG"/>
+<img src="https://github.com/boring1234/NB-Newbies/blob/main/docs/5.PNG"/>
 
 As you can see we have a pretty good result in around 250000 steps. We also can see that the steps that the agent can survive for every episode increase a lot. The data for the steps that the agent followed by creepers also increase and this data will help us ignore the situation that the agent moved around with no creepers around. 
 
