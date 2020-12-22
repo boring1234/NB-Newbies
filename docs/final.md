@@ -198,6 +198,22 @@ The current result of our algorithm does not show any sign of learning. As we cl
 #### Final Quarter Report
 
 <!---An important aspect of your project, as I’ve mentioned several times now, is evaluating your project. Be clear and precise about describing the evaluation setup, for both quantitative and qualitative results. Present the results to convince the reader that you have solved the problem, to whatever extent you claim you have. Use plots, charts, tables, screenshots, ﬁgures, etc. as needed. I expect you will need at least a few paragraphs to describe each type of evaluation that you perform.--->
+<br>
+###### Qualitative
+<br>
+Enlightened by our TA's tutorial video, we changed our project into 2-dimensional continuous setting and utilized Proximal Policy Optimization from RLlib. With a series of changes in world generation, input manipulation, and reward calculations, our AI turned out to learn effectively. In our video, we can clearly see that, in both trials, the character does his best to get away from every creeper he percepted. Before training, he could hardly keep distance from creepers' explosion radius. Later, he can survive a few consecutive episodes and barely be damaged by the explosion. We were even convinced that, in the "with attack" case, the AI optains some higher-level skills like utilize one creeper's explosion to distroy others.
+<br>
+
+<br>
+One piece of drawback in our final performance is the AI's movement. Since we used the 90-degree-based rotation to manipulate AI's perception, it has to turn around awkwardly to "see" the creepers so that they appear in the correct coordination of input matrix.
+<br>
+###### Quantitive
+<img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/result_project_2d_trainable.png"/>
+<br>
+<img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/result_project_2d_trainable_rllib_withnoattack_100.png"/>
+<br>
+The graphs above show the final machine learning result of "with attack" case and "without attack" case. Both of them reveal that our AI enhances steadily by iterations. But due to the randomization of creepers' generation, the return value may varies hugely by the number of creepers spawned near him. For example, even if the AI has acquired the ability to avoid creepers, it cannot handle with situation where the character is surrounded by them. Thus, in small scopes, the return value oscillates a lot. By observation, at the beginning of each case, the character could survive no more than 1 episode on average, whereas at the end of both cases the AI stays alive for 3-5 consecutive episodes. For example, the consecutive high scores around 140,000 in the second graph explain this fact. In short, our statistics indicate that our AI's learning is effective, and its improvement in performance is observable.
+<br>
 
 ## References
 Source code of this project refer to Assginment 2, CS 175: Project in AI, Fall 2020, UCI
