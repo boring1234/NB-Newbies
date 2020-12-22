@@ -201,7 +201,7 @@ Enlightened by our TA's tutorial video, we changed our project into 2-dimensiona
 <br>
 <img src="https://raw.githubusercontent.com/boring1234/NB-Newbies/main/docs/utilize explosion.png"/>
 <br>
-One piece of drawback in our final performance is the AI's movement. Since we used the 90-degree-based rotation to manipulate AI's perception, it has to turn around awkwardly to "see" the creepers so that they appear in the correct coordination of input matrix.
+One piece of drawback in our final performance is the AI's movement. Since we used the 90-degree-based rotation to manipulate AI's perception, it has to turn around awkwardly to "see" the creepers so that they appear in the correct coordinates of input matrix.
 <br>
 
 ###### Quantitive
