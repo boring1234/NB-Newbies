@@ -181,7 +181,7 @@ As you can see we have a pretty good result in around 250000 steps. We also can 
 
 Well, Finally, as shown in the video below, we found that the agent also learns something amazing: the agent will Wait for the creepers to get closer and move away immediately, which is the best way to make the creeper explode without hurt himself. 
 
-<iframe width="560" height="315" src="https://github.com/boring1234/NB-Newbies/blob/main/docs/1549.MP4" frameborder="0" allowfullscreen></iframe>
+<iframe width="560" height="315" src="https://youtu.be/7WoGPztsoSg" frameborder="0" allowfullscreen></iframe>
 
 <!---Use another level-two header called Approaches, In this section, describe both the baselines and your proposed approach(es). Describe precisely what the advantages and disadvantages of each are, for example, why one might be more accurate, need less data, take more time, overﬁt, and so on. Include enough technical information to be able to (mostly) reproduce your project, in particular, use pseudocode and equations as much as possible.--->
 
